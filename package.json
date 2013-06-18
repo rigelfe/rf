@@ -1,7 +1,8 @@
 {
-    "name": "rigel",
+    "name": "rf",
     "version": "0.1.0",
-    "maintainers": [
+    "description": "RigelFE Framework",
+    "contributors": [
         {
             "name": "treelite",
             "email": "c.xinle@gmail.com"
@@ -12,6 +13,5 @@
         }
     ],
     "main": "main",
-    "description": "Rigel CRM 产品线跨项目公共库",
-    "homepage": "https://github.com/rigelfe/rigel-crm"
+    "homepage": "https://github.com/rigelfe/rf"
 }

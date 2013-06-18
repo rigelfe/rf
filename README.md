@@ -1,1 +1,1 @@
-# Rigel Framework
+# RigelFE Framework
