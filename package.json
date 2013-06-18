@@ -1,0 +1,17 @@
+{
+    "name": "rigel",
+    "version": "0.1.0",
+    "maintainers": [
+        {
+            "name": "treelite",
+            "email": "c.xinle@gmail.com"
+        },
+        {
+            "name": "sushuang",
+            "email": "sushuang@baidu.com"
+        }
+    ],
+    "main": "main",
+    "description": "Rigel CRM 产品线跨项目公共库",
+    "homepage": "https://github.com/rigelfe/rigel-crm"
+}

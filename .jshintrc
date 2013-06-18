@@ -1,0 +1,28 @@
+{
+    "curly":    true,
+    "forin":    true,
+    "eqeqeq":   false,
+    "unused":   true,
+    "eqnull":   true,
+    "maxlen":   80,
+    "boss":     true,
+    "multistr": false,
+    "proto":    true,
+    "shadow":   true,
+    "sub":      true,
+    "undef":    true,
+    "supernew": true,
+
+    "laxbreak": true,
+
+    "browser":  true,
+    "devel":    true,
+
+    "globals": {
+        "define": false,
+        "baidu": false,
+        "ecui": false
+    }
+}
+
+/* vim: set ft=javascript : */
