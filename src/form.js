@@ -1,17 +1,15 @@
 /**
- * Form 表单控件
+ * Form 表单管理
  *
  * @file:   表单控件，提供输入校验等功能，
  *          子控件现在只支持ecui控件，
  *          form主元素内部的，主元素有name属性的ecui InputControl控件，会被引用为子控件，
  *          管理其提交，验证，出错提示等行为
  * @author: sushuang(sushuang@baidu.com)
- * @depend: tangram, esl, ecui
  */
 
 define(function (require) {
 
-    var inherits = baidu.lang.inherits;
     var isString = baidu.lang.isString;
     var clone = baidu.object.clone;
     var extend = baidu.object.extend;
@@ -19,8 +17,9 @@ define(function (require) {
     var InputControl = ecui.ui.InputControl;
     // FIXME
     var ajax = baidu.ejson;
-    var layer = require('js!./layer.js');
-    var ValidateMgr = require('js!./ValidateMgr.js');
+
+    var layer = require('./layer');
+    var ValidateMgr = require('./validate');
 
     /**
      * 表单控件类
@@ -149,10 +148,10 @@ define(function (require) {
         var me = this;
         ajax.get(
             url, 
-            onsuccess: function (data, ejsonObj) {
+            function (data, ejsonObj) {
                 me._oRuleMap = data;
             },
-            onfailure: function (status, ejsonObj) {
+            function (status, ejsonObj) {
                 layer.alert(me._oOptions.fetchRulesFailMsg);
                 me._oRuleMap = {};
             }
