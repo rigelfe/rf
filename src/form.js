@@ -15,9 +15,8 @@ define(function (require) {
     var extend = baidu.object.extend;
     var stringify = baidu.json.stringify;
     var InputControl = ecui.ui.InputControl;
-    // FIXME
-    var ajax = baidu.ejson;
 
+    var ajax = require('./ajax');
     var layer = require('./layer');
     var ValidateMgr = require('./validate');
 
@@ -42,7 +41,7 @@ define(function (require) {
      * @constructor
      * @param {HTMLElement} el 表单控件主元素
      * @param {Object} options 初始化参数
-     * @param {string=} options.submitURL 提交用的url
+     * @param {string=} options.url 提交用的url
      * @param {string=} options.ruleURL 获取validateRule的url
      * @param {string=} options.fetchRulesFailMsg 获取校验规则失败提示信息
      */
@@ -71,6 +70,8 @@ define(function (require) {
         if (!options.fetchRulesFailMsg) {
             options.fetchRulesFailMsg = '获取校验规则失败';
         }
+
+        this.$linkControl();
     }
 
     /**
@@ -78,10 +79,12 @@ define(function (require) {
      * 
      * @public
      */
+    /*
     FormProto.init = function () {
         // 建立对子控件的引用
         this.$linkControl();
     };
+    */
 
     /**
      * 表单控件析构
@@ -107,12 +110,12 @@ define(function (require) {
 
         for (var i = 0, el, name, ctrl; el = els[i]; i ++) {
             if (el.getControl
-                && (name = el.getAttribute('name'))
                 && (ctrl = el.getControl())
                 // 须是InputControl
                 && ctrl instanceof InputControl
                 // 须是根ecui控件
                 && !ctrl.getParent()
+                && (name = ctrl.getName())
             ) {
                 ctrlMap[name] = ctrl;
             }
@@ -177,11 +180,6 @@ define(function (require) {
             }
         }
 
-        // 清空验证错误设置
-        // FIXME
-        // 要做这件事么？
-        valid && this.setError(void 0);
-
         return valid;
     };
 
@@ -193,7 +191,7 @@ define(function (require) {
      *
      * @public
      * @param {Object} options 参数
-     * @param {string=} options.url 可以覆盖已经配置的submitURL
+     * @param {string=} options.url 可以覆盖已经配置的url
      * @param {Object=} options.extraData 额外的提交参数
      * @param {Function} options.onsubmit 提交前的回调函数，
      *      参数为：
@@ -210,6 +208,8 @@ define(function (require) {
      *          {Object} ejsonObj 整体数据
      */
     FormProto.submit = function (options) {
+        options = options || {};
+
         if (!this.validate()) {
             return;
         }
@@ -224,7 +224,7 @@ define(function (require) {
         }
 
         // 额外参数
-        extend(reqParam, options.extraData);
+        extend(reqParam, options.extraData || {});
 
         // 提交前的回调
         if (options.onsubmit && options.onsubmit(reqParam) === false) {
@@ -232,7 +232,7 @@ define(function (require) {
         }
 
         ajax.post(
-            options.url || this._oOptions.submitURL,
+            options.url || this._oOptions.url,
             'reqParam=' + encodeURIComponent(stringify(reqParam)),
             function (data, ejsonObj) { // onsuccess
                 options.onsuccess && options.onsuccess(data, ejsonObj);

@@ -1,0 +1,9 @@
+{
+    "status": 200,
+    "statusInfo": {
+        "error": { 
+            "username": "请填写姓名"
+        },
+        "msg": "座机或手机至少填写一个"
+    }
+}
