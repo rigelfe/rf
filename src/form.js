@@ -201,7 +201,7 @@ define(function (require) {
      */
     FormProto.validate = function () {
         var ctrlMap = this._oCtrlMap;
-        var ruleMap = this._oRuleMap;
+        var ruleMap = this._oRuleMap || {};
         var valid = true;
 
         for (var name in ctrlMap) {
