@@ -72,6 +72,36 @@ define(function (require) {
         }
 
         this.$linkControl();
+
+        if (options.ruleURL) {
+            this.$fetchRemoteRules(options.ruleURL);
+        }
+    }
+
+    /**
+     * 处理请求参数，合并map
+     * 
+     * @param {Object} reqParam
+     * @return {Object}
+     */
+    function processReqParam(reqParam) {
+        var data = {};
+        for (var key in reqParam) {
+            if (reqParam.hasOwnProperty(key)) {
+                var names = key.split('.');
+                var res = data;
+                for (var i = 1, len = names.length; i < len; i++) {
+                    if (!res[names[0]]) {
+                        res[names[0]] = {};
+                    }
+                    res = res[names[0]];
+                    names.splice(0, 1);
+                }
+                res[names[0]] = reqParam[key];
+            }
+        }
+
+        return data;
     }
 
     /**
@@ -157,6 +187,7 @@ define(function (require) {
             function (status, ejsonObj) {
                 layer.alert(me._oOptions.fetchRulesFailMsg);
                 me._oRuleMap = {};
+                return false;
             }
         );
     };
@@ -233,11 +264,13 @@ define(function (require) {
 
         ajax.post(
             options.url || this._oOptions.url,
-            'reqParam=' + encodeURIComponent(stringify(reqParam)),
+            'reqParam=' + encodeURIComponent(stringify(processReqParam(reqParam))),
             function (data, ejsonObj) { // onsuccess
                 options.onsuccess && options.onsuccess(data, ejsonObj);
             },
             function (status, ejsonObj) { // onfailure
+                var res = true;
+
                 // 提示后台验证失败
                 if (status == STATUS_VALIDATE_FAIL) {
                     var statusInfo = ejsonObj.statusInfo || {};
@@ -249,10 +282,15 @@ define(function (require) {
 
                     // 总体的弹窗错误信息
                     if (statusInfo.msg) {
-                        layer.alert(statusInfo.msg);
+                        layer.warning(statusInfo.msg);
                     }
+                    res = false;
                 }
-                options.onfailure && options.onfailure(status, ejsonObj);
+                if (options.onfailure) {
+                    res = options.onfailure(status, ejsonObj) && res;
+                }
+
+                return res;
             }
         );
     };

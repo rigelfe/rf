@@ -7,73 +7,74 @@ define(function () {
 
     var dom = baidu.dom;
     var page = baidu.page;
-    var eTip = null;
-    var bTipMask = false;
-    var tipTimer = null;
+    var eNotice = null;
+    var bNoticeMask = false;
+    var noticeTimer = null;
 
-    function clearTipTimer() {
-        if (tipTimer) {
-            clearTimeout(tipTimer);
-            tipTimer = null;
+    function clearNoticeTimer() {
+        if (noticeTimer) {
+            clearTimeout(noticeTimer);
+            noticeTimer = null;
         }
     }
 
     var main = {
 
         /**
-         * 显示tip浮层
-         * tip浮层位于可视窗口的顶部 用于显示操作结果的提示信息
+         * 显示通知浮层
+         * 通知浮层位于可视窗口的顶部 用于显示操作结果的提示信息
          * @public
          *
          * @param {string} text 提示文本
          * @param {boolean} mask 是否遮罩整个页面可视区域 防止用户操作
-         * @param {number} timeout 自动消失的时间间隔 如果不设置则需要通过调用hideTip来关闭浮层
+         * @param {number} timeout 自动消失的时间间隔 如果不设置则需要通过调用hideNotice来关闭浮层
          */
-        tip: function (text, mask, timeout) {
+        notify: function (text, options) {
             var x = page.getScrollLeft() + page.getViewWidth() / 2;
             var y = page.getScrollTop() + 5;
 
-            if(!eTip) {
-                eTip = dom.create('div', {
-                    className : 'rigel-layer-tip loadding-icon',
+            if(!eNotice) {
+                eNotice = dom.create('div', {
+                    className : 'ui-rf-notice',
                     style : 'display:none;'
                 });
-                document.body.appendChild(eTip);
+                document.body.appendChild(eNotice);
             }
 
-            clearTipTimer();
+            clearNoticeTimer();
 
-            if(eTip.style.display === '') {
+            if(eNotice.style.display === '') {
                 return false;
             }
 
-            eTip.innerHTML = text;
-            dom.show(eTip);
-            dom.setPosition(eTip, {
-                left : x - eTip.offsetWidth / 2,
+            eNotice.innerHTML = text;
+            dom.show(eNotice);
+            dom.setPosition(eNotice, {
+                left : x - eNotice.offsetWidth / 2,
                 top : y
             });
-            if(mask) {
+
+            if(options.mask) {
                 ecui.mask(0);
-                bTipMask = true;
+                bNoticeMask = true;
             }
 
-            if (timeout) {
-                tipTimer = setTimeout(function () {
-                    main.hideTip();
+            if (options.timeout) {
+                noticeTimer = setTimeout(function () {
+                    main.hideNotice();
                 }, timeout);
             }
             return true;
         },
         /**
-         * 关闭tip浮层
+         * 关闭通知浮层
          * @public
          */
-        hideTip: function() {
-            clearTipTimer();
-            dom.hide(eTip);
-            if(bTipMask) {
-                bTipMask = false;
+        hideNotice: function() {
+            clearNoticeTimer();
+            dom.hide(eNotice);
+            if(bNoticeMask) {
+                bNoticeMask = false;
                 ecui.mask();
             }
         },
@@ -108,11 +109,12 @@ define(function () {
          * @public
          *
          * @param {string} text 警告信息
-         * @param {Function} ok 确定按钮的处理函数，如果忽略此参数不会显示确定按钮
+         * @param {Function} ok 确定按钮的处理函数，如果此删除为false则不显示确定按钮
          */
         warning: function(text, ok) {
             var html = ['<div class="ui-messagebox-warning-icon"></div>'];
-            var buttons = ok 
+            ok = ok === false ? false : (ok || function () {});
+            var buttons = ok !== false
                 ? [{text: '确定', className: 'ui-button-g', action: ok}] 
                 : [];
 
