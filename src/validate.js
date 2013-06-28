@@ -21,8 +21,8 @@ define(function () {
      * @param {string} date2
      */
     function compareDate(date1, date2) {
-        date1 = baidu.data.parse(date1);
-        date2 = baidu.data.parse(date2);
+        date1 = baidu.date.parse(date1);
+        date2 = baidu.date.parse(date2);
 
         return date1.getTime() - date2.getTime();
     }
