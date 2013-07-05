@@ -1,12 +1,14 @@
 /**
- * @file: 验证器 
- * @author: treelite(c.xinle@gmail.com)
+ * @file 验证器 
+ * @author treelite(c.xinle@gmail.com)
  */
 
 define(function () {
 
+    // 验证器集合
     var validator = {};
 
+    // 内置正则验证规则
     var regRules = {
         email: /^[_\w-]+(\.[_\w-]+)*@([\w-])+(\.[\w-]+)*((\.[\w]{2,})|(\.[\w]{2,}\.[\w]{2,}))$/,
         url: /^[^.。，]+(\.[^.，。]+)+$/,
@@ -29,6 +31,10 @@ define(function () {
 
     /**
      * 字符串长度验证
+     *
+     * @param {string} value
+     * @param {Object} rule 验证规则
+     * @return {boolean} 验证结果
      */
     validator.len = function (value, rule) {
         var res = true;
@@ -48,6 +54,10 @@ define(function () {
 
     /**
      * 数字范围验证
+     *
+     * @param {number} value 
+     * @param {Object} rule 验证规则
+     * @return {boolean} 验证结果
      */
     validator.range = function (value, rule) {
         var res = true;
@@ -67,6 +77,10 @@ define(function () {
 
     /**
      * 正则验证
+     *
+     * @param {string} value 
+     * @param {Object} rule 验证规则
+     * @return {boolean} 验证结果
      */
     validator.regexp = function (value, rule) {
         var reg = regRules[rule.rule] || new RegExp(rule.rule);
@@ -77,30 +91,20 @@ define(function () {
 
     /**
      * 日期字符串验证
+     *
+     * @param {string} value
+     * @param {Object} rule 验证规则
+     * @return {boolean} 验证结果
      */
     validator.date = function (value, rule) {
         var res = true;
 
-        if (Object.prototype.toString.call(value) == '[object String]') {
-            value = {begin: value};
-        }
-
         if (rule.min !== undefined) {
-            if (value.begin) {
-                res = res && compareDate(value.begin, rule.min) >= 0;
-            }
-            else {
-                res = false;
-            }
+            res = res && compareDate(value, rule.min) >= 0;
         }
 
         if (rule.max !== undefined) {
-            if (value.end) {
-                res = res && compareDate(value.end, rule.main) <= 0;
-            }
-            else {
-                res = false;
-            }
+            res = res && compareDate(value, rule.max) <= 0;
         }
 
         return res;
@@ -117,18 +121,30 @@ define(function () {
          */
         validate: function (control, rules) {
             var value = control.getValue();
-            var res = true;
 
-            control.setError();
-            for (var i = 0, item; item = rules[i]; i++) {
-                res = validator[item.type](value, item);
-                if (!res) {
-                    control.setError(item.msg || '出错啦');
-                    break;
+            function validate(value, rules) {
+                var res = true;
+                if (Object.prototype.toString.call(rules) != '[object Array]') {
+                    for (var key in rules) {
+                        if (rules.hasOwnProperty(key)) {
+                            res = res && validate(value[key], rules[key]);
+                        }
+                    }
                 }
+                else {
+                    for (var i = 0, item; item = rules[i]; i++) {
+                        res = validator[item.type](value, item);
+                        if (!res) {
+                            control.setError(item.msg || '出错啦');
+                            break;
+                        }
+                    }
+                }
+                return res;
             }
 
-            return res;
+            control.setError();
+            return validate(value, rules);
         }
     };
 });

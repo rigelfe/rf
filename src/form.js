@@ -36,6 +36,40 @@ define(function (require) {
     var STATUS_VALIDATE_FAIL = 200;
 
     /**
+     * 整理规则
+     *
+     * @param {Object} rules 验证规则
+     * @param {object} controls 控件集合
+     */
+    function collectRules(rules, controls) {
+        var res = {};
+
+        function add(name, rules) {
+            var obj = res;
+            name = name.split('.');
+            for (var i = 0, len = name.length - 1; i < len; i++) {
+                if (!obj[name[i]]) {
+                    obj[name[i]] = {};
+                }
+                obj = obj[name[i]];
+            }
+            obj[name[name.length - 1]] = rules;
+        }
+
+        for (var name in rules) {
+            if (rules.hasOwnProperty(name)) {
+                if (!controls[name] && name.indexOf('.') >= 0) {
+                    var item = rules[name];
+                    delete rules[name];
+                    add(name, item);
+                }
+            }
+        }
+
+        return extend(rules, res);
+    }
+
+    /**
      * 表单控件构造函数
      *
      * @constructor
@@ -201,8 +235,10 @@ define(function (require) {
      */
     FormProto.validate = function () {
         var ctrlMap = this._oCtrlMap;
-        var ruleMap = this._oRuleMap || {};
+        var ruleMap = extend({}, this._oRuleMap || {});
         var valid = true;
+
+        ruleMap = collectRules(ruleMap, ctrlMap);
 
         for (var name in ctrlMap) {
             var rules = ruleMap[name];
