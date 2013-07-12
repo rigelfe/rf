@@ -8,11 +8,201 @@
  */
 
 define(function (require) {
-    var jsonToQuery = baidu.url.jsonToQuery;
+    //TODO: 这个地方 默认用script加载trangram，否则 可以修改为require形式
+    var T = T || baidu ;
+    var jsonToQuery = T.url.jsonToQuery;
 
     var ejson = require('./ejson');
     var layer = require('./layer');
+    var contains = T.array.contains;
+    var lastIndexOf = T.array.lastIndexOf;
+    var removeAt = T.array.removeAt;
+    var blank = function () {};
 
+    //请求队列
+    var requestQueue = (function () {
+        var queue = [];
+        var norFlag = '__req__';
+        return {
+            /**
+             * 添加请求队列
+             * 如果请求的tokenId重复则会被忽略
+             * 如果请求队列在添加前为空 则会显示loading浮层
+             * @public
+             *
+             * @param {String} tokenId 可省略
+             */
+            add: function (tokenId) {
+                if (!tokenId || !contains(queue, tokenId)) {
+                    if (queue.length <= 0) {
+                        layer.tip(
+                            '<div class="loadingIcon" /><div>'
+                          + '<span>加载中...</span>',
+                            false);
+                    }
+                    queue.push(tokenId || norFlag);
+                }
+            },
+
+            /**
+             * 减少请求队列
+             * 如果减少后请求队列为空 则会隐藏loading浮层
+             * @public
+             *
+             * @param {String} tokenId 可省略
+             */
+            reduce: function (tokenId) {
+                var flag = tokenId || norFlag;
+
+                removeAt(queue, lastIndexOf(queue, flag));
+                if (queue.length <= 0) {
+                    layer.hideTip();
+                }
+            }
+        };
+    
+    })();
+
+    // 缓存管理
+    var cacheManager = (function () {
+        var cache = {};
+
+        return {
+            /**
+             * 生成请求对应的缓存key
+             * 根据URL和参数来唯一标识一个请求
+             *
+             * @param {String} url
+             * @param {String} params 请求参数
+             * @return {String}
+             */
+            generateKey: function (url, params) {
+                if (params) {
+                    url += (url.indexOf('?') >= 0 ? '&' : '?') + params;
+                }
+
+                return encodeURIComponent(url);
+            },
+
+            /**
+             * 设置缓存
+             *
+             * @param {String} key
+             * @param {Any}    data 请求返回的数据
+             * @param {Object} response 请求返回的E-JSON数据
+             * @return {Object} 缓存数据
+             */
+            set: function (key, data, response) {
+                cache[key] = {
+                    data : data,
+                    response : response
+                };
+                return cache[key];
+            },
+
+            /**
+             * 获取缓存
+             *
+             * @param {String} key
+             * @return {Object} 缓存数据
+             */
+            get: function (key) {
+                return cache[key];
+            }
+        };
+    })();
+
+    // token管理
+    var tokenManager = (function () {
+        var tokens = [];
+
+        return {
+            /**
+            * 生成ajax的token，使得重复url调用最后一次请求的回调
+            * @param {String} tokenId  标识id
+            * @return {Number} tokenId  该标识的Count值
+            */
+            generate: function (tokenId) {
+                if (!tokens[tokenId]) {
+                    tokens[tokenId] = 0;
+                }
+                return ++tokens[tokenId];
+            },
+            /**
+            * 获取token
+            * @param {String} tokenId  标识id
+            * @return {Number} tokenId  该标识的Count值
+            */
+            get: function (tokenId) {
+                return tokens[tokenId];
+            },
+            /**
+            * 验证token是否是最新的
+            * @param {String} token  标识的Count值
+            * @param {String} tokenId  标识id
+            * @return {Boolean} tokenId  该标识的Count值
+            */
+            valiate: function (token, tokenId) {
+                return !!token ? token == tokens[tokenId] : true;
+            }
+        };
+
+    })();
+
+    /**
+    * 防止重复提交
+    */
+    var repeatManager = (function () {
+        var queue = [];
+
+        return {
+            /**
+             * 生成请求对应的缓存key
+             * 根据URL和参数来唯一标识一个请求
+             *
+             * @param {String} url
+             * @param {String} params 请求参数
+             * @return {String}
+             */
+            generateKey: function (url, params) {
+                if (params) {
+                    url += (url.indexOf('?') >= 0 ? '&' : '?') + params;
+                }
+                return encodeURIComponent(url);
+            },
+
+            /**
+             * 减少防重复请求队列
+             * @public
+             *
+             * @param {String} key
+             */
+            reduce: function (key) {
+                T.array.remove(queue, key);
+            },
+
+            /**
+             * 根据URL和参数来唯一标识一个请求
+             * 若该请求已存在队列中，则返回false，否则返回true
+             *
+             * @param {string} url
+             * @param {string} params 请求参数
+             * @return {boolean}
+             */
+            validate: function (url, params) {
+                var key = this.generateKey(url, params);
+
+                if (T.array.contains(queue, key)) {
+                    return false;
+                } else {
+                    queue.push(key);
+                    return true;
+                }
+            }
+        };
+
+    })();
+     
     var errorHandlers = {};
 
     /**
@@ -24,6 +214,20 @@ define(function (require) {
         layer.warning(msg);
     };
 
+    /**
+    * seesion失效
+    */
+    errorHandlers['201'] = function (status, obj) {
+        var msg = obj.statusInfo.msg || '当前会话失效，请重新登录';
+
+        layer.warning(msg, function () {
+            if (window.parent) {
+                window.parent.location = obj.statusInfo;
+                } else {
+                window.location = obj.statusInfo;
+            }
+        });
+    };
     /**
      * 无权操作
      */
@@ -47,33 +251,134 @@ define(function (require) {
             }, 3000);
         }
     };
+    
+    /**
+    * 创建成功的回调
+    */
+    function creatSuccessHandler(options) {
+        var success = options.onsuccess || blank;
+        var guid = options.guid;
 
-    function creatSuccessHandler(callback) {
-        return callback;
+        var callback = function(data, obj) {
+            // 重复点击
+            if (options.preventRepeat) {
+                repeatManager.reduce(options.repeatKey);
+            }
+            if (!tokenManager.valiate(options.token, options.tokenId)) {
+                requestQueue.reduce(guid);
+                return;
+            }
+            //添加缓存处理
+            if (options.cache) {
+                cacheManager.set(options.cacheKey, data, obj);
+            }
+            
+            
+            //调用回调函数
+            success.call(null, data, obj);
+
+            // 请求已完成，减少请求队列数
+            if (options.queue !== false) {
+                requestQueue.reduce(guid);
+            }
+        };
+        return  callback;
     }
 
-    function creatFailureHandler(callback) {
-        return function (status, obj) {
-            var res;
+    /**
+    * 创建失败的回调
+    */
+    function creatFailureHandler(options) {
+        var failure = options.onfailure;
+        var guid = options.guid;
 
-            if (callback) {
-                res = callback.call(null, status, obj);
-            }
+        //失败回调
+        var callback = function (status, obj) {
+ 
+            if (options.preventRepeat) {
+                repeatManager.reduce(options.repeatKey);
+            }           
 
-            if (res === false) {
+            if (!tokenManager.valiate(options.token, options.tokenId)) {
+                requestQueue.reduce(guid);
                 return;
             }
 
+            // 请求已完成，减少请求队列数
+            if (options.queue !== false) {
+                requestQueue.reduce(options.tokenId);
+            }
+           
+            //有错误处理函数，就调用
+            if (failure) {
+                var res =  callback.call(null, status, obj);
+                // 如果自定义错误处理函数返回false则阻止默认的错误处理
+                if (res === false) {
+                    return;
+                }
+            }
             var defHandler = errorHandlers[status] || errorHandlers.def;
             defHandler(status, obj);
         };
+        return callback;
     }
 
+   /**
+     * 生成GUID
+     * @private
+     *
+     * @refer http://goo.gl/0b0hu
+     */
+    function createGUID() {
+        var str = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
+        return str.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0,
+            v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    /**
+    * 用来增加url的参数 ，判断添加& or ？
+    *
+    * @param {String} url   被添加参数的url
+    * @param {String} params   需要添加的参数
+    * @return {String}   添加了参数的新的url
+    */
     function addParams4URL(url, params) {
         return url + (url.indexOf('?') >= 0 ? '&' : '?') + params;
     }
 
+    /**
+    * ajax请求的方法
+    * @param {String} url 请求的url地址
+    * @param {Object} options 请求的参数
+    * @param {Function} options.onsuccess 成功的回调
+    * @param {Function} options.onfailure 失败的回调
+    *
+    */
     function request(url, options) {
+
+        // 关于cache的处理功能
+        var o = null;
+
+        options.cacheKey = cacheManager.generateKey(url, options.data);
+        // 为请求添加token,根据url 生成tokenId
+        options.tokenId = encodeURIComponent(url);
+        options.token = tokenManager.generate(options.tokenId);
+
+        // 唯一标识 用来添加到请求队列
+        options.guid = createGUID();
+        if (options.cache && (o = cacheManager.get(options.cacheKey))) {
+            options.onSuccess.call(null, o.data, o.response);
+            return;
+        }
+
+        // 添加请求队列 发起请求
+        if (options.queue !== false) {
+            requestQueue.add(options.guid);
+        }
+        
         // 添加随机参数防止浏览器缓存
         if (options.method == 'get') {
             url = addParams4URL(url, 'req=' + (new Date()).getTime());
@@ -83,9 +388,9 @@ define(function (require) {
                 options.data = 'req=' + (new Date()).getTime();
             }
         }
-
-        options.onsuccess = creatSuccessHandler(options.onsuccess);
-        options.onfailure = creatFailureHandler(options.onfailure);
+        //创建 成功和失败的回调
+        options.onsuccess = creatSuccessHandler(options);
+        options.onfailure = creatFailureHandler(options);
 
         ejson.request(url, options);
     }
