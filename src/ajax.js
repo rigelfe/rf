@@ -30,15 +30,17 @@ define(function (require) {
              * 如果请求队列在添加前为空 则会显示loading浮层
              * @public
              *
-             * @param {String} tokenId 可省略
+             * @param {String} tokenId 
+             * @param {Boolean} mask 是mask整个页面
              */
-            add: function (tokenId) {
+            add: function (tokenId, mask) {
                 if (!tokenId || !contains(queue, tokenId)) {
+                    mask = mask || false;
                     if (queue.length <= 0) {
                         layer.tip(
                             '<div class="loadingIcon" /><div>'
                           + '<span>加载中...</span>',
-                            false);
+                            mask);
                     }
                     queue.push(tokenId || norFlag);
                 }
@@ -189,8 +191,8 @@ define(function (require) {
              * @param {string} params 请求参数
              * @return {boolean}
              */
-            validate: function (url, params) {
-                var key = this.generateKey(url, params);
+            validate: function (key) {
+                //var key = this.generateKey(url, params);
 
                 if (T.array.contains(queue, key)) {
                     return false;
@@ -306,7 +308,7 @@ define(function (require) {
 
             // 请求已完成，减少请求队列数
             if (options.queue !== false) {
-                requestQueue.reduce(options.tokenId);
+                requestQueue.reduce(options.guid);
             }
            
             //有错误处理函数，就调用
@@ -363,12 +365,19 @@ define(function (require) {
         var o = null;
 
         options.cacheKey = cacheManager.generateKey(url, options.data);
+        options.repeatKey = repeatManager.generateKey(url, options.data);
         // 为请求添加token,根据url 生成tokenId
         options.tokenId = encodeURIComponent(url);
         options.token = tokenManager.generate(options.tokenId);
 
         // 唯一标识 用来添加到请求队列
         options.guid = createGUID();
+
+        //防止二次点击 参数和url都相同
+        if (options.preventRepeat && !(o = repeatManager.validate(options.repeatKey))) {
+            return;
+        } 
+
         if (options.cache && (o = cacheManager.get(options.cacheKey))) {
             options.onSuccess.call(null, o.data, o.response);
             return;
@@ -376,7 +385,7 @@ define(function (require) {
 
         // 添加请求队列 发起请求
         if (options.queue !== false) {
-            requestQueue.add(options.guid);
+            requestQueue.add(options.guid, options.mask);
         }
         
         // 添加随机参数防止浏览器缓存
@@ -418,6 +427,25 @@ define(function (require) {
                     onfailure: onfailure
                 };
 
+            request(url, options);
+        },
+
+        /**
+         * 封装的dao
+         */
+        dao: function (url, data, onsuccess, onfailure, options) {
+            if (typeof data != 'string') {
+                data = jsonToQuery(data);
+            }
+            var _options = {
+                method: 'post',
+                data: data,
+                onsuccess: onsuccess,
+                onfailure: onfailure,
+                preventRepeat: false,
+                cache: ''
+            };
+            options = baidu.extend(_options, options);
             request(url, options);
         },
 
