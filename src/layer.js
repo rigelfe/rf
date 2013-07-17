@@ -5,6 +5,7 @@
 
 define(function () {
 
+    //notice 的各种需求变量、函数
     var dom = baidu.dom;
     var page = baidu.page;
     var eNotice = null;
@@ -17,80 +18,11 @@ define(function () {
             noticeTimer = null;
         }
     }
-    //loading的tip 各种变量
-    var eTip = null;
-    var dom = baidu.dom;
-    var page = baidu.page;
-    var bTipMask = false;
-    var tipTimer = null;
-
-    function clearTipTimer() {
-        if (tipTimer) {
-            clearTimeout(tipTimer);
-            tipTimer = null;
-        }
-    }
 
   
 
     var main = {
-        /**
-         * 显示tip浮层
-         * tip浮层位于可视窗口的顶部 用于显示操作结果的提示信息
-         * @public
-         *
-         * @param {String} text 提示文本
-         * @param {Boolean} mask 是否遮罩整个页面可视区域 防止用户操作
-         * @param {Number} timeout 自动消失的时间间隔 如果不设置则需要通过调用hideTip来关闭浮层
-         */
-        tip: function(text, mask, timeout) {
-            var x = page.getScrollLeft() + page.getViewWidth() / 2, y = page.getScrollTop() + 5;
-
-            if(!eTip) {
-                eTip = dom.create('div', {
-                    className : 'ui-rf-notice loadding-icon',
-                    style : 'display:none;'
-                });
-                document.body.appendChild(eTip);
-            }
-
-            clearTipTimer();
-
-            if(eTip.style.display == '') {
-                return false;
-            }
-
-            eTip.innerHTML = text;
-            dom.show(eTip);
-            dom.setPosition(eTip, {
-                left : x - eTip.offsetWidth / 2,
-                top : y
-            });
-            if(mask) {
-                ecui.mask(0);
-                bTipMask = true;
-            }
-
-            if (timeout) {
-                tipTimer = setTimeout(function () {
-                    rigel.layer.hideTip();
-                }, timeout);
-            }
-            return true;
-        },
-        /**
-         * 关闭tip浮层
-         * @public
-         */
-        hideTip: function() {
-            clearTipTimer();
-            dom.hide(eTip);
-            if(bTipMask) {
-                bTipMask = false;
-                ecui.mask();
-            }
-        },
-
+   
         /**
          * 显示通知浮层
          * 通知浮层位于可视窗口的顶部 用于显示操作结果的提示信息
@@ -148,6 +80,22 @@ define(function () {
                 bNoticeMask = false;
                 ecui.mask();
             }
+        },
+
+        /**
+         * 跟tip相关的mask层
+         */
+        setNoticeMask: function () {
+            ecui.mask(0);
+            bNoticeMask = true;
+        },
+
+        /**
+         * 清除tip的mask层
+         */
+        hideNoticeMask: function () {
+            ecui.mask();
+            bNoticeMask = false;
         },
         /**
          * 显示提示浮层

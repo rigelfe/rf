@@ -9,7 +9,7 @@
 /**
  * E-JSON标准格式的请求与解析功能
  */
-define(function () {
+define(function (require) {
     /**
      * 发送一个数据格式为E-JSON标准的请求
      *

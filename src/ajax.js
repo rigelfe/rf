@@ -1,10 +1,8 @@
 /**
  * @file: 异步通信，在e-json的基础上封装
- * @author: treelite(c.xinle@gmail.com)
- */
-
-/**
- * TODO: 添加请求队列管理
+ * @author: treelite(c.xinle@gmail.com) 
+ *          coocon(coocon2007@gmai.com)
+ *
  */
 
 define(function (require) {
@@ -37,11 +35,17 @@ define(function (require) {
                 if (!tokenId || !contains(queue, tokenId)) {
                     mask = mask || false;
                     if (queue.length <= 0) {
-                        layer.tip(
-                            '<div class="loadingIcon" /><div>'
-                          + '<span>加载中...</span>',
-                            mask);
+                        layer.notify(
+                            '<i class="loading-icon"></i><span>加载中...</span>'
+                            , mask);
                     }
+                    else {
+                        //请求队列已经有非mask的请求了，需要单独添加mask
+                        if (mask) {
+                            layer.setNoticeMask(); 
+                        }
+                    }
+
                     queue.push(tokenId || norFlag);
                 }
             },
@@ -58,8 +62,16 @@ define(function (require) {
 
                 removeAt(queue, lastIndexOf(queue, flag));
                 if (queue.length <= 0) {
-                    layer.hideTip();
+                    layer.hideNotice();
                 }
+            },
+
+            /**
+            *  获取队列里请求的总个数
+            *  @return {Number} 返回队列长度
+            */
+            getLength: function () {
+                return queue.length;    
             }
         };
     
@@ -266,10 +278,14 @@ define(function (require) {
             if (options.preventRepeat) {
                 repeatManager.reduce(options.repeatKey);
             }
-            if (!tokenManager.valiate(options.token, options.tokenId)) {
-                requestQueue.reduce(guid);
-                return;
+            //如果应用token特性 再判断
+            if (options.usedToken) {
+                if (!tokenManager.valiate(options.token, options.tokenId)) {
+                    requestQueue.reduce(guid);
+                    return;
+                } 
             }
+            
             //添加缓存处理
             if (options.cache) {
                 cacheManager.set(options.cacheKey, data, obj);
@@ -300,11 +316,14 @@ define(function (require) {
             if (options.preventRepeat) {
                 repeatManager.reduce(options.repeatKey);
             }           
-
-            if (!tokenManager.valiate(options.token, options.tokenId)) {
-                requestQueue.reduce(guid);
-                return;
+            //如果应用token特性 再判断
+            if (options.usedToken) {
+                if (!tokenManager.valiate(options.token, options.tokenId)) {
+                    requestQueue.reduce(guid);
+                    return;
+                } 
             }
+           
 
             // 请求已完成，减少请求队列数
             if (options.queue !== false) {
@@ -379,7 +398,7 @@ define(function (require) {
         } 
 
         if (options.cache && (o = cacheManager.get(options.cacheKey))) {
-            options.onSuccess.call(null, o.data, o.response);
+            options.onsuccess.call(null, o.data, o.response);
             return;
         }
 
@@ -405,33 +424,57 @@ define(function (require) {
     }
 
     return {
+        /**
+         * 经典的get方法
+         * @param {String} url ajax请求的url
+         * @param {Function} onsuccess 成功的回调函数
+         * @param {Function} onfailure 失败的回调函数
+         */
         get: function (url, onsuccess, onfailure) {
             var options = {
-                    method: 'get',
-                    onsuccess: onsuccess,
-                    onfailure: onfailure
-                };
+                method: 'get',
+                onsuccess: onsuccess,
+                onfailure: onfailure
+            };
 
             request(url, options);
         },
 
+        /**
+         * 经典的post方法
+         * @param {String} url ajax请求的url
+         * @param {Object|String} data ajax请求的数据，建议是Object
+         * @param {Function} onsuccess 成功的回调函数
+         * @param {Function} onfailure 失败的回调函数
+         */
         post: function (url, data, onsuccess, onfailure) {
             if (typeof data != 'string') {
                 data = jsonToQuery(data);
             }
 
             var options = {
-                    method: 'post',
-                    data: data,
-                    onsuccess: onsuccess,
-                    onfailure: onfailure
-                };
+                method: 'post',
+                data: data,
+                onsuccess: onsuccess,
+                onfailure: onfailure
+            };
 
             request(url, options);
         },
 
         /**
-         * 封装的dao
+         * 封装的dao方法 ，前端调用dao方法，可以完成常用的基本操作
+         * @param {String} url ajax请求的url 一定是post 没有处理get
+         * @param {Object|String} data ajax请求的数据，建议是Object
+         * @param {Function} onsuccess 成功的回调函数
+         * @param {Function} onfailure 失败的回调函数
+         * @param {Object} options 一些可配置的参数
+         * @param {Boolean} options.cache 是否应用缓存 默认是false
+         * @param {Boolean} options.preventRepeat 是否应用启动防止二次点击 默认是false
+         * @param {Boolean} options.mask 是在ajax的时候 启动mask，屏蔽点击 默认是false
+         * @param {Boolean} options.queue 是否需要添加到请求队列，出现loading标志默认是true
+         * @param {Boolean} options.usedToken 是否应用token机制，只响应相同url的最后一次请求，默认true
+         *
          */
         dao: function (url, data, onsuccess, onfailure, options) {
             if (typeof data != 'string') {
@@ -443,10 +486,13 @@ define(function (require) {
                 onsuccess: onsuccess,
                 onfailure: onfailure,
                 preventRepeat: false,
-                cache: ''
+                cache: false,
+                mask: false,
+                queue: true,
+                usedToken: true
             };
-            options = baidu.extend(_options, options);
-            request(url, options);
+            _options = baidu.extend(_options, options);
+            request(url, _options);
         },
 
         request: request

@@ -3,7 +3,7 @@
  * @author treelite(c.xinle@gmail.com)
  */
 
-define(function () {
+define(function (require) {
 
     // 验证器集合
     var validator = {};
