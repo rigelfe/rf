@@ -36,7 +36,7 @@ define(function (require) {
                     mask = mask || false;
                     if (queue.length <= 0) {
                         layer.notify(
-                            '<i class="loading-icon"></i><span>加载中...</span>'
+                            '<i class="icon-loading"></i><span>加载中...</span>'
                             , mask);
                     }
                     else {
