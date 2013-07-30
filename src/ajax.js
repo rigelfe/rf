@@ -449,7 +449,7 @@ define(function (require) {
          */
         post: function (url, data, onsuccess, onfailure) {
             if (typeof data != 'string') {
-                data = jsonToQuery(data);
+                data = jsonToQuery(data, encodeURIComponent);
             }
 
             var options = {
@@ -478,7 +478,7 @@ define(function (require) {
          */
         dao: function (url, data, onsuccess, onfailure, options) {
             if (typeof data != 'string') {
-                data = jsonToQuery(data);
+                data = jsonToQuery(data, encodeURIComponent);
             }
             var _options = {
                 method: 'post',
