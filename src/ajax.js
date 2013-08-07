@@ -332,7 +332,7 @@ define(function (require) {
            
             //有错误处理函数，就调用
             if (failure) {
-                var res =  callback.call(null, status, obj);
+                var res =  failure.call(null, status, obj);
                 // 如果自定义错误处理函数返回false则阻止默认的错误处理
                 if (res === false) {
                     return;
