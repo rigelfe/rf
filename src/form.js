@@ -178,7 +178,7 @@ define(function (require) {
                 // 须是InputControl
                 && ctrl instanceof InputControl
                 // 须是根ecui控件
-                && !ctrl.getParent()
+                && (!ctrl.getParent() || ctrl.getParent().getType() == 'ui-form')
                 && (name = ctrl.getName())
             ) {
                 ctrlMap[name] = ctrl;
