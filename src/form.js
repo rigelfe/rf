@@ -273,10 +273,18 @@ define(function (require) {
      *      参数为：
      *          {number} status 异常状态码
      *          {Object} ejsonObj 整体数据
+     * @param {Object} options.options ajax的请求参数配置，
+     *      参数为：
+     *          @param {Boolean} options.cache 是否应用缓存 默认是false
+     *          @param {Boolean} options.preventRepeat 是否应用启动防止二次点击 默认是false
+     *          @param {Boolean} options.mask 是在ajax的时候 启动mask，屏蔽点击 默认是false
+     *          @param {Boolean} options.queue 是否需要添加到请求队列，出现loading标志默认是true
+     *          @param {Boolean} options.usedToken 是否应用token机制，只响应相同url的最后一次请求，默认true
+     * 
      */
     FormProto.submit = function (options) {
         options = options || {};
-
+        var ajaxOptions = options.options || {};
         if (!this.validate()) {
             return;
         }
@@ -327,7 +335,8 @@ define(function (require) {
                 }
 
                 return res;
-            }
+            },
+            ajaxOptions
         );
     };
 
