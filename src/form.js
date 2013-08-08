@@ -177,8 +177,9 @@ define(function (require) {
                 && (ctrl = el.getControl())
                 // 须是InputControl
                 && ctrl instanceof InputControl
-                // 须是根ecui控件
-                && (!ctrl.getParent() || ctrl.getParent().getType() == 'ui-form')
+                // 靠name来定位（同时排除子控件）。
+                // 这里有个潜在要求：所有InputControl，在二次开发做子控件用时，
+                // 不允许使用name作为options参数或者属性名
                 && (name = ctrl.getName())
             ) {
                 ctrlMap[name] = ctrl;
