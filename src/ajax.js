@@ -36,7 +36,7 @@ define(function (require) {
                     mask = mask || false;
                     if (queue.length <= 0) {
                         layer.notify(
-                            '<i class="loading-icon"></i><span>加载中...</span>'
+                            '<i class="icon-loading"></i><span>加载中...</span>'
                             , mask);
                     }
                     else {
@@ -332,7 +332,7 @@ define(function (require) {
            
             //有错误处理函数，就调用
             if (failure) {
-                var res =  callback.call(null, status, obj);
+                var res =  failure.call(null, status, obj);
                 // 如果自定义错误处理函数返回false则阻止默认的错误处理
                 if (res === false) {
                     return;
@@ -429,15 +429,27 @@ define(function (require) {
          * @param {String} url ajax请求的url
          * @param {Function} onsuccess 成功的回调函数
          * @param {Function} onfailure 失败的回调函数
+         * @param {Object} options 一些可配置的参数
+         * @param {Boolean} options.cache 是否应用缓存 默认是false
+         * @param {Boolean} options.preventRepeat 是否应用启动防止二次点击 默认是false
+         * @param {Boolean} options.mask 是在ajax的时候 启动mask，屏蔽点击 默认是false
+         * @param {Boolean} options.queue 是否需要添加到请求队列，出现loading标志默认是true
+         * @param {Boolean} options.usedToken 是否应用token机制，只响应相同url的最后一次请求，默认true
          */
-        get: function (url, onsuccess, onfailure) {
-            var options = {
+        get: function (url, onsuccess, onfailure, options) {
+            var _options = {
                 method: 'get',
                 onsuccess: onsuccess,
-                onfailure: onfailure
+                onfailure: onfailure,
+                preventRepeat: false,
+                cache: false,
+                mask: false,
+                queue: true,
+                usedToken: true
             };
-
-            request(url, options);
+            _options = baidu.extend(_options, options);
+            request(url, _options);
+            
         },
 
         /**
@@ -446,20 +458,31 @@ define(function (require) {
          * @param {Object|String} data ajax请求的数据，建议是Object
          * @param {Function} onsuccess 成功的回调函数
          * @param {Function} onfailure 失败的回调函数
+         * @param {Object} options 一些可配置的参数
+         * @param {Boolean} options.cache 是否应用缓存 默认是false
+         * @param {Boolean} options.preventRepeat 是否应用启动防止二次点击 默认是false
+         * @param {Boolean} options.mask 是在ajax的时候 启动mask，屏蔽点击 默认是false
+         * @param {Boolean} options.queue 是否需要添加到请求队列，出现loading标志默认是true
+         * @param {Boolean} options.usedToken 是否应用token机制，只响应相同url的最后一次请求，默认true
          */
-        post: function (url, data, onsuccess, onfailure) {
+        post: function (url, data, onsuccess, onfailure, options) {
             if (typeof data != 'string') {
-                data = jsonToQuery(data);
+                data = jsonToQuery(data, encodeURIComponent);
             }
 
-            var options = {
+            var _options = {
                 method: 'post',
                 data: data,
                 onsuccess: onsuccess,
-                onfailure: onfailure
+                onfailure: onfailure, 
+                preventRepeat: false,
+                cache: false,
+                mask: false,
+                queue: true,
+                usedToken: true
             };
-
-            request(url, options);
+            _options = baidu.extend(_options, options);
+            request(url, _options);
         },
 
         /**
@@ -478,7 +501,7 @@ define(function (require) {
          */
         dao: function (url, data, onsuccess, onfailure, options) {
             if (typeof data != 'string') {
-                data = jsonToQuery(data);
+                data = jsonToQuery(data, encodeURIComponent);
             }
             var _options = {
                 method: 'post',

@@ -38,7 +38,7 @@ define(function () {
 
             if(!eNotice) {
                 eNotice = dom.create('div', {
-                    className : 'ui-rf-notice',
+                    className : 'ui-rf-notify',
                     style : 'display:none;'
                 });
                 document.body.appendChild(eNotice);
