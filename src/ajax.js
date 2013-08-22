@@ -382,6 +382,7 @@ define(function (require) {
 
         // 关于cache的处理功能
         var o = null;
+        options.data += '&isAjax=1';
 
         options.cacheKey = cacheManager.generateKey(url, options.data);
         options.repeatKey = repeatManager.generateKey(url, options.data);
