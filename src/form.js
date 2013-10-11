@@ -223,7 +223,9 @@ define(function (require) {
                 layer.alert(me._oOptions.fetchRulesFailMsg);
                 me._oRuleMap = {};
                 return false;
-            }
+            },
+            //不使用token，否则两个相同的url会执行最后一次回调
+            { usedToken: false }
         );
     };
 
