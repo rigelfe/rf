@@ -41,11 +41,15 @@ define(function (require) {
 
         value = new String(value);
 
-        if (rule.min !== undefined) {
+        if (rule.empty === false && value.length <= 0) {
+            res = false;
+        }
+
+        if (rule.min !== undefined && value.length > 0) {
             res = res && value.length >= rule.min;
         }
 
-        if (rule.max !== undefined) {
+        if (rule.max !== undefined && value.length > 0) {
             res = res && value.length <= rule.max;
         }
 
