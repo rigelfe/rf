@@ -5,7 +5,7 @@
  *          子控件现在只支持ecui控件，
  *          form主元素内部的，主元素有name属性的ecui InputControl控件，会被引用为子控件，
  *          管理其提交，验证，出错提示等行为
- * @author: sushuang(sushuang@baidu.com)
+ * @author: sushuang(sushuang0322@gmail.com)
  */
 
 define(function (require) {
